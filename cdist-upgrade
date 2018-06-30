@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# cdist-upgrade
+#
+# Simple wrapper around some git commands to easily change/upgrade cdist versions.
+#
+
+test "$CDIST_INSTALL" = "" && { echo "CDIST_INSTALL isn't set. Aborting."; exit 1; }
+
+old=$(cdist --version)
+cd $CDIST_INSTALL
+current=$(git describe --tags)
+git remote update || { echo "Error running git remote update."; exit 1; }
+versionlist="$current $current on"
+for version in $(git tag | grep -v '[a-z]\+' | sort -t. -k 1,1rn -k 2,2rn -k 3,3rn)
+do
+   if test "$version" != "$current"; then
+      versionlist="$versionlist $version $version off"
+   fi
+done
+newver=$(whiptail --radiolist --notags --default-item "$current" --title "Select version" "Select version" 20 70 15 $versionlist 3>&1 1>&2 2>&3)
+test $? -ne 0 && { echo "Aborted."; exit 1; }
+test "$current" = "$newver" && { echo "No new version selected."; exit 1; }
+git pull > /dev/null 2>&1
+git checkout $newver
+make man || { echo "Error making manpages."; exit 1; }
+mandb || { echo "Error updating man db."; exit 1; }
+echo "Changed version from $current to $newver."
