@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# cdist-inventory
+#
+# Automatically generate a cdist inventory based on explorer output.
+
+test "$CDIST_EXPLORE" = "" && { echo "CDIST_EXPLORE not set, aborting."; exit 1; }
+test "$CDIST_INVENTORY" = "" && { echo "CDIST_INVENTORY not set, aborting."; exit 1; }
+
+rm -rf $CDIST_INVENTORY
+mkdir -p $CDIST_INVENTORY
+
+for name in $CDIST_EXPLORE/*
+do
+   if test -d $name
+   then
+      host=${name/*\//}
+      cat $name/network >> $CDIST_INVENTORY/$host
+      test "$(cat $name/mailer)" = "yes" && echo mailer >> $CDIST_INVENTORY/$host
+      test "$(cat $name/distro)" = "proxmox" && echo proxmox >> $CDIST_INVENTORY/$host
+   fi
+done
