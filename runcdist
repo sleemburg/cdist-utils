@@ -1,0 +1,63 @@
+#!/bin/bash
+#
+# Wrapper to make it easier to run cdist
+#
+# 20170825 MV: Added support for inventory
+# 20150730 MV: Rewrote to more consistent syntax
+# 20150729 MV: Rewrote to better syntax
+# 20130410 MV: Initial version
+
+# required for inventory option
+export CDIST_BETA=1
+
+usage()
+{
+   echo "runcdist [options] host.."
+   echo
+   echo "  host               Name of host to run manifest on"
+   echo "  -v                 Run verbose (more increases verbosity)"
+   echo "  -q                 Quiet"
+   echo "  -p                 Run in parrallel"
+   echo "  -o <manifest>      Overrule default manifest with specific manifest"
+   echo "  -t <tags..>        Run manifest on all hosts in inventory with tag(s)"
+   echo "  -a                 Run manifest on all hosts in inventory"
+   exit 1
+}
+
+main()
+{
+   VERBOSE="-v"
+   numargs=$#
+   while test "$1" != ""
+   do
+      case $1 in
+      "-h") usage
+      ;;
+      "-v") VERBOSE="$VERBOSE -v"
+      ;;
+      "-q") VERBOSE=""
+      ;;
+      "-p") PAR="-p"
+      ;;
+      "-t") TAG="-t"
+      ;;
+      "-o") CONFIGTYPE=$2 ; shift
+      ;;
+      "-a") all="-A"
+      ;;
+      *)
+         item="$item $1"
+      ;;
+      esac
+      shift
+   done
+   test "$item" = "" -a "$all" = "" && { echo "Either require all or inventory tag or hosts."; usage; }
+   test "$item" != "" -a "$all" != "" && { echo "Can't choose all and specific hosts or inventory tags."; usage; }
+   test "$TAG" != "" -a "$all" != "" && { echo "Can't choose all and specific inventory tags"; usage; }
+   test "$TAG" != "" -a "$item" = "" && { echo "Can't choose tags and not specify them."; usage; }
+
+   #{ CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config $VERBOSE $PAR $all $TAG $item 2>&1 >&3 | grep -v "Exit request sent." 3>&- ; } 3>&1
+   CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config -l-1 $VERBOSE $PAR $all $TAG $item
+}
+
+main $*
