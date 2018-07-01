@@ -29,3 +29,7 @@ Wrapper around some git commands to make it easier to change versions/upgrade.
 ### cdist-inventory
 
 Create a cdist inventory based on explorer output.
+
+### initial-manifest
+
+An example initial manifest I use and integrates part of the other scripts.
