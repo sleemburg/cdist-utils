@@ -10,7 +10,7 @@ test "$CDIST_INSTALL" = "" && { echo "CDIST_INSTALL isn't set. Aborting."; exit 
 old=$(cdist --version)
 cd $CDIST_INSTALL
 current=$(git describe --tags)
-git remote update || { echo "Error running git remote update."; exit 1; }
+git remote update > /dev/null || { echo "Error running git remote update."; exit 1; }
 versionlist="$current $current on"
 for version in $(git tag | grep -v '[a-z]\+' | sort -t. -k 1,1rn -k 2,2rn -k 3,3rn)
 do
