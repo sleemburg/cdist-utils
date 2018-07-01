@@ -31,7 +31,7 @@ Run manifest(s) on all hosts matching the specified tag(s).
 `-a`
 Run manifest(s) on all hosts in inventory.
 
-EXAMPLES
+# EXAMPLES
 
 Run cdist for all systems tagged as server
 
