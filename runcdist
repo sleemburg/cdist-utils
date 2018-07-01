@@ -1,11 +1,6 @@
 #!/bin/bash
 #
 # Wrapper to make it easier to run cdist
-#
-# 20170825 MV: Added support for inventory
-# 20150730 MV: Rewrote to more consistent syntax
-# 20150729 MV: Rewrote to better syntax
-# 20130410 MV: Initial version
 
 # required for inventory option
 export CDIST_BETA=1
