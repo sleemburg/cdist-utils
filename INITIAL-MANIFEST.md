@@ -41,6 +41,8 @@ explore directory to a version control system. Depending on the type of informat
 your explore output provides it can help in determining the point at which changes
 have occured.
 
+# MANIFESTS
+
 After the explore information is handled, manifests are run. It is not always
 optimal to run every manifest for a host. So the `runcdist` script provides an
 envirionment variable `CDISTACTION` which if set points to a specific manifest
