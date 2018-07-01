@@ -6,11 +6,11 @@ life a bit easier :)
 The scripts assume some settings that need to be available in order to function
 properly. I set them in the cdist user's environment.
 
-CDIST_INSTALL=path_to_cdist_install
+`CDIST_INSTALL=path_to_cdist_install`
 
 The directory where cdist is installed.
 
-CDISTEXPLORE=path_to_explore_output
+`CDISTEXPLORE=path_to_explore_output`
 
 The directory where explorer output is stored.
 
