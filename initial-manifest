@@ -1,0 +1,35 @@
+#!/bin/bash
+#
+# Example cdist initial manifest
+#
+
+# Initialise some explorer variables
+fqdn=$( cat $__global/explorer/fqdn )
+os=$( cat $__global/explorer/os )
+network=$( cat $__global/explorer/network )
+lsb_codename=$( cat $__global/explorer/lsb_codename )
+hostname=$( cat $__global/explorer/hostname )
+ldapclient=$( cat $__global/explorer/ldapclient )
+mobile=$( cat $__global/explorer/mobile )
+machine=$( cat $__global/explorer/machine )
+machine_type=$( cat $__global/explorer/machine_type )
+
+# Save explorer output
+rm -rf $CDIST_EXPLORE/$fqdn; mkdir -p $CDIST_EXPLORE/$fqdn
+for name in $__global/explorer/*
+do
+   cp $name $CDIST_EXPLORE/$fqdn
+done
+date "+%Y/%m/%d %H:%M:%S" > $CDIST_EXPLORE/$fqdn/explore_date
+
+# Run specific manifest if required. none will only explore.
+if test "$CDISTACTION" != ""
+then
+   test "$CDISTACTION" = "none" && { echo "Explore only." ; exit 0; }
+   test ! -f $__manifest/$CDISTACTION && { echo "No such manifest."; exit 1; }
+   . $__manifest/$CDISTACTION
+   exit 0
+fi
+
+# Include generic manifests below
+. $__manifest/generic
