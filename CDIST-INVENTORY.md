@@ -46,7 +46,7 @@ The two parts are separated by a `:`.
 
 The following operators are available.
 
-`if`
+## if
 
 The if operator requires an argument containing of two parts:
 
@@ -58,7 +58,7 @@ The two parts of the argument need to be seperated by a `=`.
 The search string is applied to the content of the explorer. If the search string
 matches the explorer content, the tag is added to the inventory entry for the host.
 
-`content`
+## content
 
 Content requires one argument. The following arguments are available:
 
