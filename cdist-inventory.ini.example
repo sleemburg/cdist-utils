@@ -6,3 +6,6 @@ if:debian=dpkg
 
 [packages]
 if:xrdp=rdp
+
+[online]
+if:!offline=online

@@ -29,6 +29,16 @@ When running the script, the configuration file is parsed and the rules are appl
 to all hosts in the explorer directory. Based on the rules and the available
 explorer output, the inventory directory is repopulated.
 
+It is also possible to add manual tags. This requires the following directory
+to be present:
+
+`~/cdist-inventory`
+
+Like an explorer direcory, this directory contains files which match the labels
+in the configuration file. The content of the file consists of the names of
+hosts. Compared to the explorer directory matching on this directory only 
+generates a true or false outcome.
+
 # CONFIGURATION FILE
 
 The configuration file is in .ini style format.
@@ -56,7 +66,7 @@ The if operator requires an argument containing of two parts:
 The two parts of the argument need to be seperated by a `=`.
 
 The search string is applied to the content of the explorer. If the search string
-matches the explorer content, the tag is added to the inventory entry for the host.
+matches the explorer content, the tag is added to the inventory entry for the host. If the search string starts with an !, the tag is added if the search string does not match.
 
 ## content
 
@@ -79,12 +89,14 @@ explorers exists and generate output:
 * network: generates the name of the network a system lives in.
 * distro: the name of the distribution installed on the system.
 * packages: a list of packages installed on the system.
+* online: a referece to a file with hostnames. The file contains hosts that are always offline.
 
 The configuration will do the following:
 
 * Copy the content of the explorer file `network` as a tag for each host.
 * If the distribution contains the word `debian` it will add the tag `dpkg` to the inventory of each host.
 * If the list of packages contains `xrdp` it will add the tag `rdp` to the inventory of each host.
+* If the hosts does not exist in the file online, it will be given the tag `online`.
 
 # AUTHOR
 
