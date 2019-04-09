@@ -32,7 +32,7 @@ main()
       ;;
       "-q") VERBOSE=""
       ;;
-      "-p") PAR="-p"
+      "-p") PAR="-p 5"
       ;;
       "-t") TAG="-t"
       ;;

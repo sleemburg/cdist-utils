@@ -5,6 +5,7 @@
 # Automatically generate a cdist inventory based on explorer output.
 
 CFG=~/.cdist-inventory.ini
+MANUALCFG=~/cdist-inventory
 
 parse_config() {
    count=0
@@ -31,7 +32,8 @@ inventory() {
 
    for explorer in ${!explorers[*]}
    do
-      if test -f "$CDIST_EXPLORE/$host/$explorer"; then
+      if test -e "$CDIST_EXPLORE/$host/$explorer" -o \
+              -e "$MANUALCFG/$explorer" ; then
          for action in ${explorers[$explorer]}
          do
             op=${actions[$action]/:*}
@@ -39,13 +41,35 @@ inventory() {
             case $op in
             "if")
                content=${arg/=*/}
+               neg=0
+               if test "${content:0:1}" = "!"; then
+                  neg=1
+               fi
                value=${arg/*=/}
-               grep $content $CDIST_EXPLORE/$host/$explorer > /dev/null 2>&1 && echo $value >> $CDIST_INVENTORY/$host
+               if test -e "$CDIST_EXPLORE/$host/$explorer"; then
+                  if test "$neg" = 0; then
+                     grep $content $CDIST_EXPLORE/$host/$explorer > /dev/null 2>&1 && echo $value >> $CDIST_INVENTORY/$host
+                  else
+                     grep $content $CDIST_EXPLORE/$host/$explorer > /dev/null 2>&1 || echo $value >> $CDIST_INVENTORY/$host
+                  fi
+               fi
+               if test -e  "$MANUALCFG/$explorer"; then
+                  if test "$neg" = 0; then
+                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 && echo $value >> $CDIST_INVENTORY/$host
+                  else
+                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 || echo $value >> $CDIST_INVENTORY/$host
+                  fi
+               fi
             ;;
             "content")
                case $arg in
                "copy")
-                  cat $CDIST_EXPLORE/$host/$explorer >> $CDIST_INVENTORY/$host
+                  if test -e "$CDIST_EXPLORE/$host/$explorer"; then
+                     cat $CDIST_EXPLORE/$host/$explorer >> $CDIST_INVENTORY/$host
+                  fi
+                  if test -e "$MANUALCFG/$explorer"; then
+                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 && echo "true" >> $CDIST_INVENTORY/$host || echo "false" >> $CDIST_INVENTORY/$host
+                  fi
                ;;
                esac
             ;;
