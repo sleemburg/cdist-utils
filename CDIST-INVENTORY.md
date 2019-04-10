@@ -68,7 +68,7 @@ The two parts of the argument need to be seperated by a `=`.
 The search string is applied to the content of the explorer. If the search string
 matches the explorer content, the tag is added to the inventory entry for the host. If the search string starts with an !, the tag is added if the search string does not match.
 
-When matching to a file in the `cdist-inventory` directory, the search string is not used and can be an arbitrary word. The search string will always be the system hostname.
+When matching to a file in the `cdist-inventory` directory, the search string is not used and can be an arbitrary word in the if expression. The search string will always be the system hostname.
 
 ## content
 
@@ -76,6 +76,8 @@ Content requires one argument. The following arguments are available:
 
 * copy
 Copies to the content of the explorer as a tag to the hosts inventory entry.
+
+When matching to a file in the `cdist-inventory` directory, the content will be true if the host is present and false if it isn't.
 
 # FILES
 
@@ -91,14 +93,14 @@ explorers exists and generate output:
 * network: generates the name of the network a system lives in.
 * distro: the name of the distribution installed on the system.
 * packages: a list of packages installed on the system.
-* online: a referece to a file with hostnames. The file contains hosts that are always offline.
+* offline: a referece to a file with hostnames. The file contains hosts that are always offline.
 
 The configuration will do the following:
 
 * Copy the content of the explorer file `network` as a tag for each host.
 * If the distribution contains the word `debian` it will add the tag `dpkg` to the inventory of each host.
 * If the list of packages contains `xrdp` it will add the tag `rdp` to the inventory of each host.
-* If the hosts does not exist in the file online, it will be given the tag `online`.
+* If the hosts does not exist in the file offline, it will be given the tag `online`.
 
 # AUTHOR
 
