@@ -21,6 +21,7 @@ usage()
 
 main()
 {
+   args="$@"
    VERBOSE="-v"
    numargs=$#
    while test "$1" != ""
@@ -53,6 +54,7 @@ main()
 
    #{ CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config $VERBOSE $PAR $all $TAG $item 2>&1 >&3 | grep -v "Exit request sent." 3>&- ; } 3>&1
    CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config -l-1 $VERBOSE $PAR $all $TAG $item
+   type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "$0 $args"
 }
 
-main $*
+main "$@"

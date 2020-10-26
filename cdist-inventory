@@ -30,12 +30,10 @@ parse_config() {
 inventory() {
    host=$1
 
-   for explorer in ${!explorers[*]}
-   do
+   for explorer in ${!explorers[*]}; do
       if test -e "$CDIST_EXPLORE/$host/$explorer" -o \
               -e "$MANUALCFG/$explorer" ; then
-         for action in ${explorers[$explorer]}
-         do
+         for action in ${explorers[$explorer]}; do
             op=${actions[$action]/:*}
             arg=${actions[$action]/*:}
             case $op in
@@ -91,8 +89,7 @@ main() {
 
    for folder in $CDIST_EXPLORE/*
    do
-      if test -d $folder
-      then
+      if test -d $folder; then
          host=${folder/*\//}
          inventory $host
       fi
