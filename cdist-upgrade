@@ -21,8 +21,10 @@ done
 newver=$(whiptail --radiolist --notags --default-item "$current" --title "Select version" "Select version" 20 70 15 $versionlist 3>&1 1>&2 2>&3)
 test $? -ne 0 && { echo "Aborted."; exit 1; }
 test "$current" = "$newver" && { echo "No new version selected."; exit 1; }
-git pull > /dev/null 2>&1
+git fetch > /dev/null 2>&1
+test "$?" -ne 0 && { echo "Error while fetching git repository."; exit 1; }
 git checkout $newver
+test "$?" -ne 0 && { echo "Error while checking out version $newver."; exit 1; }
 make man || { echo "Error making manpages."; exit 1; }
 mandb || { echo "Error updating man db."; exit 1; }
 echo "Changed version from $current to $newver."
