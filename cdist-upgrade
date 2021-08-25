@@ -25,6 +25,7 @@ git fetch > /dev/null 2>&1
 test "$?" -ne 0 && { echo "Error while fetching git repository."; exit 1; }
 git checkout $newver
 test "$?" -ne 0 && { echo "Error while checking out version $newver."; exit 1; }
+make install-user || { echo "Error making install."; exit 1; }
 make man || { echo "Error making manpages."; exit 1; }
 mandb || { echo "Error updating man db."; exit 1; }
 echo "Changed version from $current to $newver."
