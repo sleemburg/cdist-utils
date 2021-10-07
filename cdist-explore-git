@@ -28,3 +28,4 @@ test "$?" -ne "0" && { echo "git commit: non zero exit code."; exit 1; }
 
 git push > /dev/null 2>&1
 test "$?" -ne "0" && { echo "Explore directory: git push non zero exit code."; exit 1; }
+exit 0
