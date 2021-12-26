@@ -27,5 +27,6 @@ git checkout $newver
 test "$?" -ne 0 && { echo "Error while checking out version $newver."; exit 1; }
 make install-user || { echo "Error making install."; exit 1; }
 make man || { echo "Error making manpages."; exit 1; }
+make dotman || { echo "Error making .man pages."; exit 1; }
 mandb || { echo "Error updating man db."; exit 1; }
 echo "Changed version from $current to $newver."
