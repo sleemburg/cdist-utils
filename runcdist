@@ -37,9 +37,11 @@ main()
       ;;
       q) verbose=""
       ;;
-      p) par="-p 5"
+      p) par="-p 5 -j 5"
       ;;
-      t) tag="-t"
+      t) tag="-a -t"
+      ;;
+      T) tag="-t"
       ;;
       o) CONFIGTYPE=$OPTARG
       ;;
@@ -77,6 +79,8 @@ main()
    test "$tag" != "" -a "$items" = "" && { echo "Can't choose tags and not specify them."; usage; }
 
    CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config -l-1 \
+      --remote-exec "ssh" \
+      --remote-copy "scp -q" \
       $verbose $par $all $tag $items
    type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "$0 $args"
 }
