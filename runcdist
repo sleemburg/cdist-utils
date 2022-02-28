@@ -26,12 +26,11 @@ usage()
 
 main()
 {
-   args="$@"
-   numargs=$#
+   args=( "$0" "$@" )
 
    options=( "-v" )
 
-   while getopts :hvqpto:dalL opt; do
+   while getopts :hvqptTo:dalL opt; do
       case $opt in
       h) usage
       ;;
@@ -71,22 +70,22 @@ main()
          cdist inventory list | cut -d' ' -f2 | tr ',' '\n' | sort -u
          exit
       fi
-      arg="-a"
-      test "$list" = "any" && arg=""
-      cdist inventory list $arg -H -t "${items[@]}"
+      arg=("-a")
+      test "$list" = "any" && arg=()
+      cdist inventory list "${arg[@]}" -H -t "${items[@]}"
       exit
    fi
 
-   test "$items" = "" -a "$all" = "" && { echo "Either require all or inventory tag or hosts."; usage; }
-   test "$items" != "" -a "$all" != "" && { echo "Can't choose all and specific hosts or inventory tags."; usage; }
+   test "${#items[*]}" -eq 0 -a "$all" = "" && { echo "Either require all or inventory tag or hosts."; usage; }
+   test "${#items[*]}" -gt 0 -a "$all" != "" && { echo "Can't choose all and specific hosts or inventory tags."; usage; }
    test "$tag" != "" -a "$all" != "" && { echo "Can't choose all and specific inventory tags"; usage; }
-   test "$tag" != "" -a "$items" = "" && { echo "Can't choose tags and not specify them."; usage; }
+   test "$tag" != "" -a "${#items[@]}" -eq 0 && { echo "Can't choose tags and not specify them."; usage; }
 
    if test "$tag" != ""; then
       alltags=( $(cdist inventory list | cut -d' ' -f2 | tr ',' '\n' | sort -u) )
       ok=1
       for item in "${items[@]}"; do
-         [[ ! " ${alltags[@]} " =~ " ${item} " ]] && { echo "Tag $item not found."; ok=0; }
+         [[ ! " ${alltags[*]} " =~ " ${item} " ]] && { echo "Tag $item not found."; ok=0; }
       done
       test "$ok" -ne 1 && exit 1
    fi
@@ -95,7 +94,7 @@ main()
       --remote-exec "ssh" \
       --remote-copy "scp -q" \
       "${options[@]}" $all $tag "${items[@]}"
-   type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "$0 $args"
+   type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[@]}"
 }
 
 main "$@"
