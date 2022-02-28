@@ -20,24 +20,28 @@ usage()
    echo "  -l                 When no tags are specified, list all available tags. When tags are present, list all hosts having all tags"
    echo "  -L                 When no tags are specified, list all available tags. When tags are present, list all hosts having any tags"
    echo "  -a                 Run cdist on all hosts in inventory"
+   echo "  -d                 Dry run, don't execute any code"
    exit 1
 }
 
 main()
 {
    args="$@"
-   verbose="-v"
    numargs=$#
 
-   while getopts :hvqpto:alL opt; do
+   options=( "-v" )
+
+   while getopts :hvqpto:dalL opt; do
       case $opt in
       h) usage
       ;;
-      v) verbose="$verbose -v"
+      v) options+=( "-v" )
       ;;
-      q) verbose=""
+      q) options=( "${options[@]/-v}" )
       ;;
-      p) par="-p 5 -j 5"
+      p) options+=( "-p" "5" "-j" "5" )
+      ;;
+      d) options+=( "-n" )
       ;;
       t) tag="-a -t"
       ;;
@@ -60,16 +64,16 @@ main()
       esac
    done
    shift $((OPTIND-1))
-   items="$*"
+   items=( "$@" )
 
    if test "$list" != ""; then
-      if test "$items" = ""; then
+      if test "${#items[*]}" -eq 0; then
          cdist inventory list | cut -d' ' -f2 | tr ',' '\n' | sort -u
          exit
       fi
       arg="-a"
       test "$list" = "any" && arg=""
-      cdist inventory list $arg -H -t $items
+      cdist inventory list $arg -H -t "${items[@]}"
       exit
    fi
 
@@ -78,10 +82,19 @@ main()
    test "$tag" != "" -a "$all" != "" && { echo "Can't choose all and specific inventory tags"; usage; }
    test "$tag" != "" -a "$items" = "" && { echo "Can't choose tags and not specify them."; usage; }
 
+   if test "$tag" != ""; then
+      alltags=( $(cdist inventory list | cut -d' ' -f2 | tr ',' '\n' | sort -u) )
+      ok=1
+      for item in "${items[@]}"; do
+         [[ ! " ${alltags[@]} " =~ " ${item} " ]] && { echo "Tag $item not found."; ok=0; }
+      done
+      test "$ok" -ne 1 && exit 1
+   fi
+
    CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config -l-1 \
       --remote-exec "ssh" \
       --remote-copy "scp -q" \
-      $verbose $par $all $tag $items
+      "${options[@]}" $all $tag "${items[@]}"
    type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "$0 $args"
 }
 
