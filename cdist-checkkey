@@ -3,14 +3,27 @@
 # Verify if ssh keys are available in agent
 #
 
+AGENT=ssh
+
+checkstate() {
+   ssh-add -L > /dev/null 2>&1
+   res=$?
+   case "$AGENT" in
+   "gpg")
+      if test "$res" -ne "2"; then
+         numkeys=$(gpg-connect-agent -q 'keyinfo --list' /bye 2> /dev/null | grep '^S' | wc -l)
+         openkeys=$(gpg-connect-agent -q 'keyinfo --list' /bye 2> /dev/null | grep '^S' | grep ' 1 ' | wc -l)
+         test "$openkeys" -ne "$numkeys" && res=1
+      fi
+   ;;
+   esac
+   return $res
+}
+
 test -e ~/.cdistrc && . ~/.cdistrc
-ssh-add -L > /dev/null 2>&1
-res=$?
-if test "$res" -ne "2"; then
-   numkeys=$(gpg-connect-agent -q 'keyinfo --list' /bye 2> /dev/null | grep '^S' | wc -l)
-   openkeys=$(gpg-connect-agent -q 'keyinfo --list' /bye 2> /dev/null | grep '^S' | grep ' 1 ' | wc -l)
-   test "$openkeys" -ne "$numkeys" && res=1
-fi
+
+checkstate
+res="$?"
 
 case "$1" in
 "-c")
@@ -23,8 +36,22 @@ case "$1" in
 ;;
 *)
    add=0
-   test "$res" -eq "2" && { add=1; gpg-agent --daemon > /dev/null ; }
-   keys=$(gpg-connect-agent 'keyinfo --list' /bye | grep '^S' | cut -d ' ' -f 3)
-   test "$res" -eq "1" -o "$add" -eq "1" && { read -s -p "Passphrase: " pp; for key in $keys; do echo $pp | /usr/lib/gnupg2/gpg-preset-passphrase --preset $key; done; echo; }
+   case "$AGENT" in
+   "gpg")
+      test "$res" -eq "2" && { add=1; gpg-agent --daemon > /dev/null ; }
+      keys=$(gpg-connect-agent 'keyinfo --list' /bye | grep '^S' | cut -d ' ' -f 3)
+      test "$res" -eq "1" -o "$add" -eq "1" && { read -s -p "Passphrase: " pp; for key in $keys; do echo $pp | /usr/lib/gnupg2/gpg-preset-passphrase --preset $key; done; echo; }
+   ;;
+   "ssh")
+      if test "$res" -eq "2"; then
+         add=1
+         rm -f $SSH_AUTH_SOCK
+         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+      fi
+      if test "$res" -eq "1" -o "$add" -eq "1"; then
+         ssh-add $(ls ~/.ssh/id_* | grep -v pub)
+      fi
+   ;;
+   esac
 ;;
 esac
