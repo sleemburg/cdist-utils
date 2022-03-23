@@ -9,15 +9,14 @@ MANUALCFG=~/cdist-inventory
 
 parse_config() {
    count=0
-   while read var
-   do
-      if [[ $var == \[*] ]]
-      then
+   while read var; do
+      if [[ $var == \[*] ]]; then
           if test "$section" != ""; then
              declare -g -A "explorers[$section]=$list"
              unset list
           fi
           section=${var:1:-1}
+          test "${explorers[$section]}" != "" && echo "Duplicate header \"$section\" in config."
       else
           declare -g -A "actions[$count]=$var"
           list="$list $count"
