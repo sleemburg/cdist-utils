@@ -11,8 +11,8 @@ usage()
    echo
    echo "  <hosts>            Name of host or hosts to run cdist on"
    echo "  <tags>             Name of tag or tags to select hosts to run cdist on"
-   echo "  -v                 Run verbose (more increases verbosity)"
-   echo "  -q                 Quiet"
+   echo "  -v                 Run verbose (more increases verbosity, default warning and error)"
+   echo "  -q                 Quiet (disable warning and error messages)"
    echo "  -p                 Run in parrallel"
    echo "  -o <manifest>      Overrule default manifest with specific manifest"
    echo "  -t                 All non option arguments are tags. Runs against all hosts having all tags"
@@ -36,9 +36,9 @@ main()
       ;;
       v) options+=( "-v" )
       ;;
-      q) options=( ${options[@]/-v} )
+      q) options+=( "-q" )
       ;;
-      p) options+=( "-p" "5" "-j" "5" )
+      p) options+=( "-p" "$(nproc)" )
       ;;
       d) options+=( "-n" )
       ;;
