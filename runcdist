@@ -28,7 +28,7 @@ main()
 {
    args=( "$0" "$@" )
 
-   options=( "-v" "--remote-exec" "ssh" "--remote-copy" "scp -q" )
+   options=( )
 
    while getopts :hvqptTo:dalL opt; do
       case $opt in
@@ -92,7 +92,7 @@ main()
       test "$ok" -ne 1 && exit 1
    fi
 
-   CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config -l-1 \
+   CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config \
       "${options[@]}" $all $tag ${items[*]}
    type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[@]}"
 }
