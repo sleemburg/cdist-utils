@@ -1,35 +1,122 @@
 #!/bin/bash
 #
-# Example cdist initial manifest
-#
+# Cdist initial manifest
 
-# Initialise some explorer variables
-fqdn=$( cat $__global/explorer/fqdn )
-os=$( cat $__global/explorer/os )
-network=$( cat $__global/explorer/network )
-lsb_codename=$( cat $__global/explorer/lsb_codename )
-hostname=$( cat $__global/explorer/hostname )
-ldapclient=$( cat $__global/explorer/ldapclient )
-mobile=$( cat $__global/explorer/mobile )
-machine=$( cat $__global/explorer/machine )
-machine_type=$( cat $__global/explorer/machine_type )
+# Break on errors
+set -e
+
+MANIFESTALL=autorun
+
+# Safe include function for manifests including other manifests
+include() {
+   ! test "$CDISTACTION" && return 0
+   local manifest="${__manifest}/${MANIFESTALL}/${1}"
+   if test -e "$manifest"; then
+      source "$manifest"
+   else
+      return 1
+   fi
+}
+
+# parse configuration file
+include_cfg() {
+   local repo="$1"; shift
+   local key="$1"; shift
+   local line include newinclude
+
+   # Find configuration file
+   include_find_cfg() {
+      local i key init=0
+      test "$1" == "--init" && { init=1; shift; }
+      key="$1"
+      for i in ${!_includedirs[*]}; do
+         test -f "${_includedirs[$i]}/${key}" && { _cfgfile="${_includedirs[$i]}/${key}"; break; }
+         test "$init" = "1" && unset '_includedirs[i]'
+      done
+      if test "$init" -eq 1; then
+         test "$init" = "1" && unset '_includedirs[i]'
+      fi
+      #_includedirs=( "$_includedirs[@]}" )
+      test "$_cfgfile" = "" && return 1
+      return 0
+   }
+
+   test "${#FUNCNAME[*]}" -gt 10 && { echo "Include depth too great." > /dev/stderr; return 1 ;}
+   unset _cfgfile
+   if test "${FUNCNAME[0]}" != "${FUNCNAME[1]}"; then
+      _includedirs=( "$@" )
+      include_find_cfg --init "$key"
+   else
+      include_find_cfg "$key"
+   fi
+   test "$?" -ne 0 && return
+
+   while read -u 5 line; do
+      case "${line:0:1}" in
+      @) newinclude+=( "${line:1}" )
+      ;;
+      !) if test -f "${repo}/${line:1}"; then
+            echo "${line:1}"
+         else
+            return 1
+         fi
+      ;;
+      esac
+   done 5< "$_cfgfile"
+   for key in "${newinclude[@]}"; do
+      include_cfg "$repo" "$key"
+      test "$?" -ne 0 && { echo "Error processing include $key" > /dev/stderr; return 1; }
+   done
+   return 0
+}
+
+# Pull explorer information into environment
+for explorerfile in $__global/explorer/*; do
+   explorer=${explorerfile/*\//}
+   explorer=${explorer//-/_}
+   if test "$(cat $explorerfile | wc -l)" -eq 1; then
+      declare "e_$explorer=$(cat $explorerfile)"
+   else
+      readarray -t "e_$explorer" < $explorerfile
+   fi
+done
+
+# Always need fqdn to be set
+test "$e_fqdn" = "" && { echo "fqdn not set, aborting."; exit 1; }
+
+# Set all tags to 0
+for tag in $(cdist inventory list  | sed -n "s/.* //; s/,/\n/gp" | sort -u); do
+   tag=${tag//-/_}
+   declare "t_$tag=0"
+done
+# Set host tags to 1
+for tag in $(cdist inventory list "$e_fqdn" | sed -n "s/.* //; s/,/ /gp" ); do
+   tag=${tag//_/}
+   declare "t_$tag=1"
+done
 
 # Save explorer output
-rm -rf $CDIST_EXPLORE/$fqdn; mkdir -p $CDIST_EXPLORE/$fqdn
-for name in $__global/explorer/*
-do
-   cp $name $CDIST_EXPLORE/$fqdn
+rm -rf "$CDIST_EXPLORE/$e_fqdn"; mkdir -p "$CDIST_EXPLORE/$e_fqdn"
+for name in $__global/explorer/*; do
+   cp $name $CDIST_EXPLORE/$e_fqdn
 done
-date "+%Y/%m/%d %H:%M:%S" > $CDIST_EXPLORE/$fqdn/explore_date
 
-# Run specific manifest if required. none will only explore.
-if test "$CDISTACTION" != ""
-then
-   test "$CDISTACTION" = "none" && { echo "Explore only." ; exit 0; }
-   test ! -f $__manifest/$CDISTACTION && { echo "No such manifest."; exit 1; }
-   . $__manifest/$CDISTACTION
-   exit 0
+# Run specific manifest(s) if required. "none" will only explore.
+if test "$CDISTACTION" != ""; then
+   test "$CDISTACTION" = "none" && exit 0
+   for manifest in ${CDISTACTION//,/ }; do
+      if test -f $__manifest/$manifest; then
+         . $__manifest/$manifest
+      elif test -f $__manifest/$MANIFESTALL/$manifest; then
+         . $__manifest/$MANIFESTALL/$manifest
+      else
+         echo "Manifest $manifest not found."
+         exit 1
+      fi
+   done
+   exit
 fi
 
-# Include generic manifests below
-. $__manifest/generic
+for manifest in $__manifest/$MANIFESTALL/*; do
+  . "$manifest"
+done
