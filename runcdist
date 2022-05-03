@@ -5,8 +5,7 @@
 # required for inventory option
 export CDIST_BETA=1
 
-usage()
-{
+usage() {
    echo "runcdist [options] <hosts|tags>"
    echo
    echo "  <hosts>            Name of host or hosts to run cdist on"
@@ -24,11 +23,10 @@ usage()
    exit 1
 }
 
-main()
-{
+main() {
    args=( "$0" "$@" )
 
-   options=( )
+   options=( "--remote-copy" "scp -q" "--remote-exec" "ssh -x -oPermitLocalCommand=no -oClearAllForwardings=yes -oRemoteCommand=none -oRequestTTY=no -q -oForwardAgent=no" )
 
    while getopts :hvqptTo:dalL opt; do
       case $opt in
@@ -38,7 +36,8 @@ main()
       ;;
       q) options+=( "-q" )
       ;;
-      p) options+=( "-p" "$(nproc)" )
+      #p) options+=( "-p" "$(nproc)" )
+      p) options+=( "-p" "5" )
       ;;
       d) options+=( "-n" )
       ;;
@@ -92,9 +91,8 @@ main()
       test "$ok" -ne 1 && exit 1
    fi
 
-   CDISTACTION=$CONFIGTYPE cdist config -c ~cdist/config \
-      "${options[@]}" $all $tag ${items[*]}
-   type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[@]}"
+   CDISTACTION=$CONFIGTYPE cdist config -c "$CDIST_CONFIG_DIR" "${options[@]}" $all $tag ${items[*]}
+   type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[*]}"
 }
 
 main "$@"
