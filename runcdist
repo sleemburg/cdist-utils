@@ -16,10 +16,12 @@ usage() {
    echo "  -o <manifest>      Overrule default manifest with specific manifest"
    echo "  -t                 All non option arguments are tags. Runs against all hosts having all tags"
    echo "  -T                 All non option arguments are tags. Runs against all hosts having any tags"
+   echo "  -X                 All non option arguments are tags. Excludes all hosts having any tags"
    echo "  -l                 When no tags are specified, list all available tags. When tags are present, list all hosts having all tags"
    echo "  -L                 When no tags are specified, list all available tags. When tags are present, list all hosts having any tags"
    echo "  -a                 Run cdist on all hosts in inventory"
    echo "  -d                 Dry run, don't execute any code"
+   echo "  -S                 Don't save output streams, but display them"
    exit 1
 }
 
@@ -28,7 +30,7 @@ main() {
 
    options=( "--remote-copy" "scp -q" "--remote-exec" "ssh -x -oPermitLocalCommand=no -oClearAllForwardings=yes -oRemoteCommand=none -oRequestTTY=no -q -oForwardAgent=no" )
 
-   while getopts :hvqptTo:dalL opt; do
+   while getopts :hvqptTo:dalLS opt; do
       case $opt in
       h) usage
       ;;
@@ -52,6 +54,8 @@ main() {
       l) list="all"
       ;;
       L) list="any"
+      ;;
+      S) options+=( "-S" )
       ;;
       \?) echo "Unknown option: -$OPTARG"
           usage
@@ -90,7 +94,6 @@ main() {
       done
       test "$ok" -ne 1 && exit 1
    fi
-   test "${#items[*]}" -eq 0 -a "$all" == "-A" && items=( $(cdist inventory list -H) )
 
    CDISTACTION=$CONFIGTYPE cdist config -c "$CDIST_CONFIG_DIR" "${options[@]}" $all $tag ${items[*]}
    type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[*]}"
