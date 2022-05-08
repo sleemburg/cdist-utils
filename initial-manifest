@@ -58,6 +58,7 @@ include_cfg() {
       !) if test -f "${repo}/${line:1}"; then
             echo "${line:1}"
          else
+            echo "File $line does not exist (from $_cfgfile)" > /dev/stderr
             return 1
          fi
       ;;
