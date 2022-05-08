@@ -83,7 +83,7 @@ main() {
    if test "$tag" != ""; then
       test "$(cdist inventory list -H $tag "${items[@]}")" = "" && {
          echo "No hosts match specified tags."; exit 1; }
-      alltags=( $(cdist inventory list | sed -n "s/.* //; s/,/\n/gp" | sort -u ) )
+      alltags=( $(cdist inventory list | sed -n "s/.* //; s/,/\n/g;p" | sort -u ) )
       ok=1
       for item in "${items[@]}"; do
          [[ ! " ${alltags[*]} " =~ " ${item} " ]] && { echo "Tag $item not found."; ok=0; }
