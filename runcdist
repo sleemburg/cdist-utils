@@ -21,16 +21,17 @@ usage() {
    echo "  -L                 When no tags are specified, list all available tags. When tags are present, list all hosts having any tags"
    echo "  -a                 Run cdist on all hosts in inventory"
    echo "  -d                 Dry run, don't execute any code"
-   echo "  -S                 Don't save output streams, but display them"
+   echo "  -x                 Run in debug mode"
    exit 1
 }
 
 main() {
    args=( "$0" "$@" )
+   export CDISTDEBUG=0
 
    options=( "--remote-copy" "scp -q" "--remote-exec" "ssh -x -oPermitLocalCommand=no -oClearAllForwardings=yes -oRemoteCommand=none -oRequestTTY=no -q -oForwardAgent=no" )
 
-   while getopts :hvqptTo:dalLS opt; do
+   while getopts :hvqptTo:dalLx opt; do
       case $opt in
       h) usage
       ;;
@@ -55,7 +56,8 @@ main() {
       ;;
       L) list="any"
       ;;
-      S) options+=( "-S" )
+      x) CDISTDEBUG=1
+         options+=( "-S" )
       ;;
       \?) echo "Unknown option: -$OPTARG"
           usage
@@ -94,7 +96,6 @@ main() {
       done
       test "$ok" -ne 1 && exit 1
    fi
-
    CDISTACTION=$CONFIGTYPE cdist config -c "$CDIST_CONFIG_DIR" "${options[@]}" $all $tag ${items[*]}
    type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[*]}"
 }
