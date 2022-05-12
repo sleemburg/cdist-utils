@@ -7,6 +7,18 @@ set -e
 
 MANIFESTALL=autorun
 
+CDISTSOURCE() {
+   man="$1"
+   if test "$CDISTDEBUG" -gt 0; then
+      echo "INIT MANIFEST: sourcing $man"
+      set -x
+   fi
+   . $man
+   if test "$CDISTDEBUG" -gt 0; then
+      set +x
+   fi
+}
+
 # Safe include function for manifests including other manifests
 include() {
    ! test "$CDISTACTION" && return 0
@@ -73,12 +85,12 @@ include_cfg() {
 
 # Pull explorer information into environment
 for explorerfile in $__global/explorer/*; do
-   explorer=${explorerfile/*\//}
-   explorer=${explorer//-/_}
-   if test "$(cat $explorerfile | wc -l)" -eq 1; then
-      declare "e_$explorer=$(cat $explorerfile)"
+   explorer="${explorerfile/*\//}"
+   explorer="${explorer//-/_}"
+   if test "$(cat "$explorerfile" | wc -l)" -eq 1; then
+      declare "e_$explorer=$(cat "$explorerfile")"
    else
-      readarray -t "e_$explorer" < $explorerfile
+      readarray -t "e_$explorer" < "$explorerfile"
    fi
 done
 
@@ -87,7 +99,7 @@ test "$e_fqdn" = "" && { echo "fqdn not set, aborting."; exit 1; }
 
 # Set all tags to 0
 for tag in $(cdist inventory list  | sed -n "s/.* //; s/,/\n/gp" | sort -u); do
-   tag=${tag//-/_}
+   tag="${tag//-/_}"
    declare "t_$tag=0"
 done
 # Set host tags to 1
@@ -99,17 +111,17 @@ done
 # Save explorer output
 rm -rf "$CDIST_EXPLORE/$e_fqdn"; mkdir -p "$CDIST_EXPLORE/$e_fqdn"
 for name in $__global/explorer/*; do
-   cp $name $CDIST_EXPLORE/$e_fqdn
+   cp "$name" "$CDIST_EXPLORE/$e_fqdn"
 done
 
 # Run specific manifest(s) if required. "none" will only explore.
 if test "$CDISTACTION" != ""; then
    test "$CDISTACTION" = "none" && exit 0
    for manifest in ${CDISTACTION//,/ }; do
-      if test -f $__manifest/$manifest; then
-         . $__manifest/$manifest
-      elif test -f $__manifest/$MANIFESTALL/$manifest; then
-         . $__manifest/$MANIFESTALL/$manifest
+      if test -f "$__manifest/$manifest"; then
+         CDISTSOURCE "$__manifest/$manifest"
+      elif test -f "$__manifest/$MANIFESTALL/$manifest"; then
+         CDISTSOURCE "$__manifest/$MANIFESTALL/$manifest"
       else
          echo "Manifest $manifest not found."
          exit 1
@@ -119,5 +131,5 @@ if test "$CDISTACTION" != ""; then
 fi
 
 for manifest in $__manifest/$MANIFESTALL/*; do
-  . "$manifest"
+  CDISTSOURCE "$manifest"
 done
