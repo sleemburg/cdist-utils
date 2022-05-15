@@ -104,7 +104,7 @@ for tag in $(cdist inventory list  | sed -n "s/.* //; s/,/\n/gp" | sort -u); do
 done
 # Set host tags to 1
 for tag in $(cdist inventory list "$e_fqdn" | sed -n "s/.* //; s/,/ /gp" ); do
-   tag=${tag//_/}
+   tag=${tag//-/_}
    declare "t_$tag=1"
 done
 
