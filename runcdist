@@ -17,7 +17,6 @@ usage() {
    echo "  -o <manifest>      Overrule default manifest with specific manifest"
    echo "  -t                 All non option arguments are tags. Runs against all hosts having all tags"
    echo "  -T                 All non option arguments are tags. Runs against all hosts having any tags"
-   echo "  -X                 All non option arguments are tags. Excludes all hosts having any tags"
    echo "  -l                 When no tags are specified, list all available tags. When tags are present, list all hosts having all tags"
    echo "  -L                 When no tags are specified, list all available tags. When tags are present, list all hosts having any tags"
    echo "  -a                 Run cdist on all hosts in inventory"
