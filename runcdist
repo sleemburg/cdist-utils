@@ -10,6 +10,7 @@ usage() {
    echo
    echo "  <hosts>            Name of host or hosts to run cdist on"
    echo "  <tags>             Name of tag or tags to select hosts to run cdist on"
+   echo "  -c <.cdistrc>      Source the <.cdistrc> file, default is ~/.cdistrc"
    echo "  -v                 Run verbose (more increases verbosity, default warning and error)"
    echo "  -q                 Quiet (disable warning and error messages)"
    echo "  -p                 Run in parrallel"
@@ -28,10 +29,11 @@ usage() {
 main() {
    args=( "$0" "$@" )
    export CDISTDEBUG=0
+   CDISTRC=~/.cdistrc
 
    options=( "--remote-copy" "scp -q" "--remote-exec" "ssh -x -oPermitLocalCommand=no -oClearAllForwardings=yes -oRemoteCommand=none -oRequestTTY=no -q -oForwardAgent=no" )
 
-   while getopts :hvqptTo:dalLx opt; do
+   while getopts :hvqptTo:dalLxc: opt; do
       case $opt in
       h) usage
       ;;
@@ -52,6 +54,8 @@ main() {
       ;;
       a) all="-A"
       ;;
+      c) CDISTRC=$OPTARG
+      ;;
       l) list="all"
       ;;
       L) list="any"
@@ -69,6 +73,8 @@ main() {
    done
    shift $((OPTIND-1))
    items=( "$@" )
+
+   test -f "$CDISTRC" || { echo "No such file: $CDISTRC"; usage; }
 
    if test "$list" != ""; then
       if test "${#items[*]}" -eq 0; then
