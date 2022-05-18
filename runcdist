@@ -75,6 +75,8 @@ main() {
 
    test -f "$CDISTRC" || { echo "No such file: $CDISTRC"; usage; }
 
+   source "$CDISTRC"
+
    if test "$list" != ""; then
       if test "${#items[*]}" -eq 0; then
          cdist inventory list | sed -n "s/.* //; s/,/\n/gp" | sort -u
