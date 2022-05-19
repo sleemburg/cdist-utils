@@ -2,6 +2,9 @@
 #
 # Wrapper to make it easier to run cdist
 
+# defaults
+DEFCDISTRC=~/.cdistrc
+
 # required for inventory option
 export CDIST_BETA=1
 
@@ -28,7 +31,7 @@ usage() {
 main() {
    args=( "$0" "$@" )
    export CDISTDEBUG=0
-   CDISTRC=~/.cdistrc
+   CDISTRC=""
 
    options=( "--remote-copy" "scp -q" "--remote-exec" "ssh -x -oPermitLocalCommand=no -oClearAllForwardings=yes -oRemoteCommand=none -oRequestTTY=no -q -oForwardAgent=no" )
 
@@ -73,7 +76,9 @@ main() {
    shift $((OPTIND-1))
    items=( "$@" )
 
-   test -f "$CDISTRC" || { echo "No such file: $CDISTRC"; usage; }
+   test ! -z "$CDISTRC" -a ! -f "$CDISTRC" && { echo "No such file: $CDISTRC"; usage; }
+   test -z "$CDISTRC" && CDISTRC="$DEFCDISTRC"
+   test -f "$CDISTRC" && source "$CDISTRC"
 
    if test "$list" != ""; then
       if test "${#items[*]}" -eq 0; then
