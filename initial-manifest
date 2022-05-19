@@ -96,6 +96,7 @@ done
 
 # Always need fqdn to be set
 test "$e_fqdn" = "" && { echo "fqdn not set, aborting."; exit 1; }
+test "$e_fqdn" == "${e_fqdn%%.*}" && { echo "fqdn is not fully qualified, aborting."; exit 1; }
 
 # Set all tags to 0
 for tag in $(cdist inventory list  | sed -n "s/.* //; s/,/\n/gp" | sort -u); do
