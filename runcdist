@@ -108,6 +108,7 @@ main() {
    fi
    CDISTACTION=$CONFIGTYPE cdist config -c "$CDIST_CONFIG_DIR" "${options[@]}" $all $tag ${items[*]}
    type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[*]}"
+   type cdist-inventory > /dev/null 2>&1 && cdist-inventory
 }
 
 main "$@"
