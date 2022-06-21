@@ -30,49 +30,65 @@ inventory() {
    host=$1
 
    for explorer in ${!explorers[*]}; do
-      if test -e "$CDIST_EXPLORE/$host/$explorer" -o \
-              -e "$MANUALCFG/$explorer" ; then
-         for action in ${explorers[$explorer]}; do
-            op=${actions[$action]/:*}
-            arg=${actions[$action]/*:}
+      ! test -e "$CDIST_EXPLORE/$host/$explorer" -o \
+              -e "$MANUALCFG/$explorer" && continue
+      for action in ${explorers[$explorer]}; do
+         tag=""
+         for ops in ${actions[$action]//+/ }; do
+            op=${ops/:*}
+            arg=${ops/*:}
             case $op in
             "if")
                content=${arg/=*/}
                neg=0
-               if test "${content:0:1}" = "!"; then
-                  neg=1
-               fi
+               test "${content:0:1}" = "!" && neg=1
                value=${arg/*=/}
                if test -e "$CDIST_EXPLORE/$host/$explorer"; then
-                  if test "$neg" = 0; then
-                     grep $content $CDIST_EXPLORE/$host/$explorer > /dev/null 2>&1 && echo $value >> $CDIST_INVENTORY/$host
-                  else
-                     grep $content $CDIST_EXPLORE/$host/$explorer > /dev/null 2>&1 || echo $value >> $CDIST_INVENTORY/$host
-                  fi
+                  match="$(grep $content $CDIST_EXPLORE/$host/$explorer 2> /dev/null)"
+                  test "$neg" -eq 0 -a "$match" != "" && {
+                     if test "${value:0:1}" = "~"; then
+                        match=$(echo $match | sed "${value:1}")
+                     else
+                        match="$value"
+                     fi
+                     tag="${tag}${match}"
+                  }
+                  test "$neg" -eq 1 -a "$match" = "" && \
+                     tag="${tag}${value}"
                fi
                if test -e  "$MANUALCFG/$explorer"; then
                   if test "$neg" = 0; then
-                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 && echo $value >> $CDIST_INVENTORY/$host
+                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 && tag="${tag}${value}"
                   else
-                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 || echo $value >> $CDIST_INVENTORY/$host
+                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 || tag="${tag}${value}"
                   fi
                fi
+            ;;
+            "static")
+               tag="${tag}${arg}"
             ;;
             "content")
                case $arg in
                "copy")
                   if test -e "$CDIST_EXPLORE/$host/$explorer"; then
-                     cat $CDIST_EXPLORE/$host/$explorer >> $CDIST_INVENTORY/$host
+                     tag="${tag}$(cat $CDIST_EXPLORE/$host/$explorer)"
                   fi
                   if test -e "$MANUALCFG/$explorer"; then
-                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 && echo "true" >> $CDIST_INVENTORY/$host || echo "false" >> $CDIST_INVENTORY/$host
+                     grep "$host" $MANUALCFG/$explorer > /dev/null 2>&1 && tag="${tag}true" || tag="${tag}false"
                   fi
+               ;;
+               ~*)
+                  tag="${tag}$(sed "$arg" $CDIST_EXPLORE/$host/$explorer)"
                ;;
                esac
             ;;
+            *)
+               echo "Unknown operator: $op"
+            ;;
             esac
          done
-      fi
+         test "$tag" != "" && echo "$tag" >> $CDIST_INVENTORY/$host
+      done
    done
 }
 

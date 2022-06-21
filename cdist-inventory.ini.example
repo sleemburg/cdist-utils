@@ -9,3 +9,6 @@ if:xrdp=rdp
 
 [offline]
 if:!offline=online
+
+[vlan]
+static:vlan+content:copy
