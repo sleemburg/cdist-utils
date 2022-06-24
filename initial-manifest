@@ -65,7 +65,8 @@ include_cfg() {
 
    while read -u 5 line; do
       case "${line:0:1}" in
-      @) newinclude+=( "${line:1}" )
+      @) include_cfg "$repo" "${line:1}"
+         test "$?" -ne 0 && { echo "Error processing include ${line:1}" > /dev/stderr; return 1; }
       ;;
       !) if test -f "${repo}/${line:1}"; then
             echo "${line:1}"
@@ -76,10 +77,6 @@ include_cfg() {
       ;;
       esac
    done 5< "$_cfgfile"
-   for key in "${newinclude[@]}"; do
-      include_cfg "$repo" "$key"
-      test "$?" -ne 0 && { echo "Error processing include $key" > /dev/stderr; return 1; }
-   done
    return 0
 }
 
