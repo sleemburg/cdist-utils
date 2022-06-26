@@ -102,13 +102,13 @@ main() {
    rm -rf $CDIST_INVENTORY
    mkdir -p $CDIST_INVENTORY
 
-   for folder in $CDIST_EXPLORE/*
-   do
+   for folder in $CDIST_EXPLORE/*; do
       if test -d $folder; then
          host=${folder/*\//}
          inventory $host
       fi
    done
+   return 0
 }
 
 main "$@"
