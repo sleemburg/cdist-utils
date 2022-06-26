@@ -13,7 +13,7 @@ CDISTSOURCE() {
       echo "INIT MANIFEST: sourcing $man"
       set -x
    fi
-   . $man
+   . "$man"
    if test "$CDISTDEBUG" -gt 0; then
       set +x
    fi
@@ -34,7 +34,7 @@ include() {
 include_cfg() {
    local repo="$1"; shift
    local key="$1"; shift
-   local line include newinclude
+   local line include
 
    # Find configuration file
    include_find_cfg() {
@@ -42,18 +42,17 @@ include_cfg() {
       test "$1" == "--init" && { init=1; shift; }
       key="$1"
       for i in ${!_includedirs[*]}; do
-         test -f "${_includedirs[$i]}/${key}" && { _cfgfile="${_includedirs[$i]}/${key}"; break; }
+         test -f "${_includedirs[$i]}/${key}" && { 
+            _cfgfile="${_includedirs[$i]}/${key}"; break; }
          test "$init" = "1" && unset '_includedirs[i]'
       done
-      if test "$init" -eq 1; then
-         test "$init" = "1" && unset '_includedirs[i]'
-      fi
-      #_includedirs=( "$_includedirs[@]}" )
+      test "$init" -eq 1 && unset '_includedirs[i]'
       test "$_cfgfile" = "" && return 1
       return 0
    }
 
-   test "${#FUNCNAME[*]}" -gt 10 && { echo "Include depth too great." > /dev/stderr; return 1 ;}
+   test "${#FUNCNAME[*]}" -gt 10 && { echo "Include depth too great." > /dev/stderr;
+                                      return 1 ;}
    unset _cfgfile
    if test "${FUNCNAME[0]}" != "${FUNCNAME[1]}"; then
       _includedirs=( "$@" )
@@ -63,9 +62,12 @@ include_cfg() {
    fi
    test "$?" -ne 0 && return
 
-   while read -u 5 line; do
+   while read -r -u 5 line; do
+      key="${line:1}"
       case "${line:0:1}" in
-      @) newinclude+=( "${line:1}" )
+      @) include_cfg "$repo" "$key"
+         test "$?" -ne 0 && { echo "Error processing include $key" > /dev/stderr;
+                              return 1; }
       ;;
       !) if test -f "${repo}/${line:1}"; then
             echo "${line:1}"
@@ -76,18 +78,14 @@ include_cfg() {
       ;;
       esac
    done 5< "$_cfgfile"
-   for key in "${newinclude[@]}"; do
-      include_cfg "$repo" "$key"
-      test "$?" -ne 0 && { echo "Error processing include $key" > /dev/stderr; return 1; }
-   done
    return 0
 }
 
 # Pull explorer information into environment
-for explorerfile in $__global/explorer/*; do
+for explorerfile in "$__global"/explorer/*; do
    explorer="${explorerfile/*\//}"
    explorer="${explorer//-/_}"
-   if test "$(cat "$explorerfile" | wc -l)" -eq 1; then
+   if test "$( wc -l < "$explorerfile" )" -eq 1; then
       declare "e_$explorer=$(cat "$explorerfile")"
    else
       readarray -t "e_$explorer" < "$explorerfile"
@@ -110,8 +108,8 @@ for tag in $(cdist inventory list "$e_fqdn" | sed -n "s/.* //; s/,/ /gp" ); do
 done
 
 # Save explorer output
-rm -rf "$CDIST_EXPLORE/$e_fqdn"; mkdir -p "$CDIST_EXPLORE/$e_fqdn"
-for name in $__global/explorer/*; do
+rm -rf "${CDIST_EXPLORE:?}/$e_fqdn"; mkdir -p "$CDIST_EXPLORE/$e_fqdn"
+for name in "$__global"/explorer/*; do
    cp "$name" "$CDIST_EXPLORE/$e_fqdn"
 done
 
@@ -131,6 +129,6 @@ if test "$CDISTACTION" != ""; then
    exit
 fi
 
-for manifest in $__manifest/$MANIFESTALL/*; do
+for manifest in "$__manifest"/"$MANIFESTALL"/*; do
   CDISTSOURCE "$manifest"
 done
