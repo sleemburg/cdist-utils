@@ -23,7 +23,7 @@ usage() {
    echo "  -l                 When no tags are specified, list all available tags. When tags are present, list all hosts having all tags"
    echo "  -L                 When no tags are specified, list all available tags. When tags are present, list all hosts having any tags"
    echo "  -a                 Run cdist on all hosts in inventory"
-   echo "  -d                 Dry run, don't execute any code"
+   echo "  -d                 Dry run, don't execute types (will run manifests)"
    echo "  -x                 Run in debug mode"
    exit 1
 }
@@ -107,8 +107,10 @@ main() {
       test "$ok" -ne 1 && exit 1
    fi
    CDISTACTION=$CONFIGTYPE cdist config -c "$CDIST_CONFIG_DIR" "${options[@]}" $all $tag ${items[*]}
-   type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[*]}"
+   cdistret=$?
+   type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[*]} (ret ${cdistret})"
    type cdist-inventory > /dev/null 2>&1 && cdist-inventory
+   return $cdistret
 }
 
 main "$@"
