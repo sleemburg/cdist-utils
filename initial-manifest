@@ -30,7 +30,7 @@ include() {
       exit 1
    fi
 
-   for dir in $(ls -d ${__manifest}/*/); do
+   for dir in ${__manifest}/ $(ls -d ${__manifest}/*/); do
       if test -e "${dir}${1}"; then
          manifest="${dir}${1}"
          break
