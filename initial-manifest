@@ -6,6 +6,7 @@
 set -e
 
 MANIFESTALL=autorun
+SOURCESTACK=()
 
 CDISTSOURCE() {
    man="$1"
@@ -21,9 +22,33 @@ CDISTSOURCE() {
 
 # Safe include function for manifests including other manifests
 include() {
+   local i dir manifest=''
+
    ! test "$CDISTACTION" && return 0
-   local manifest="${__manifest}/${MANIFESTALL}/${1}"
-   if test -e "$manifest"; then
+   if test $(basename "${1}") == $(basename "${__cdist_manifest}"); then
+      echo "ERROR: The init manifest itself cannot be included"
+      exit 1
+   fi
+
+   for dir in $(ls -d ${__manifest}/*/); do
+      if test -e "${dir}${1}"; then
+         manifest="${dir}${1}"
+         break
+      fi
+   done
+
+   for i in "${SOURCESTACK[@]}}"; do
+      if test "${i}" == "${manifest}"; then
+         read line func file < <(caller)
+         test -z "${file}" && file="${func}"
+         file=$(basename "${file}")
+         echo "ERROR: Cirulair include for manifest '${file}' from '${1}'"
+         exit 1
+      fi
+   done
+
+   if ! test -z "${manifest}"; then
+      SOURCESTACK+=("${manifest}")
       source "$manifest"
    else
       return 1
