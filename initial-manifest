@@ -49,7 +49,7 @@ include() {
 
    if ! test -z "${manifest}"; then
       SOURCESTACK+=("${manifest}")
-      source "$manifest"
+      CDISTSOURCE "$manifest"
    else
       return 1
    fi
