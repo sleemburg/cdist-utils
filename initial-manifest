@@ -24,7 +24,10 @@ CDISTSOURCE() {
 include() {
    local i dir manifest=''
 
-   ! test "$CDISTACTION" && return 0
+   if [[ ! "$CDISTACTION" && -e "${__manifest}/autorun/${1}" ]]; then
+      return 0
+   fi
+
    if test $(basename "${1}") == $(basename "${__cdist_manifest}"); then
       echo "ERROR: The init manifest itself cannot be included"
       exit 1
