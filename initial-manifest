@@ -22,13 +22,23 @@ CDISTSOURCE() {
 
 # Safe include function for manifests including other manifests
 include() {
-   local i dir manifest=''
+   local i dir manifest='' cdistaction
 
-   ! test "$CDISTACTION" && return 0
+   test "$CDISTACTION" = "" -a -e "${__manifest}/${MANIFESTALL}/${1}" && return 0
+
    if test $(basename "${1}") == $(basename "${__cdist_manifest}"); then
       echo "ERROR: The init manifest itself cannot be included"
       exit 1
    fi
+
+   unset cdistaction
+   for manifest in ${CDISTACTION//,/ }; do
+      if test -f "$__manifest/$manifest"; then
+         cdistaction+=( "$__manifest/$manifest" )
+      elif test -f "$__manifest/$MANIFESTALL/$manifest"; then
+         cdistaction+=( "$__manifest/$MANIFESTALL/$manifest" )
+      fi
+   done
 
    for dir in ${__manifest}/ $(ls -d ${__manifest}/*/); do
       if test -e "${dir}${1}"; then
@@ -37,19 +47,19 @@ include() {
       fi
    done
 
-   for i in "${SOURCESTACK[@]}}"; do
+   for i in "${cdistaction[@]}" "${SOURCESTACK[@]}}"; do
       if test "${i}" == "${manifest}"; then
          read line func file < <(caller)
          test -z "${file}" && file="${func}"
          file=$(basename "${file}")
-         echo "ERROR: Circular include for manifest '${file}' from '${1}'"
+         echo "ERROR: Circular/multiple include(s) of ${1} in manifest ${file}"
          exit 1
       fi
    done
 
    if ! test -z "${manifest}"; then
       SOURCESTACK+=("${manifest}")
-      source "$manifest"
+      CDISTSOURCE "$manifest"
    else
       return 1
    fi
