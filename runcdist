@@ -129,7 +129,7 @@ main() {
       ret="$?"
       test "$ret" -ne 0 && echo "\"${postrun[$step]}\" returned $ret with output: $out"
    done
-   return $cdistret
+   return $CDISTRET
 }
 
 main "$@"
