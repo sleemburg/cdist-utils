@@ -16,6 +16,7 @@ usage() {
    echo "  -v                 Run verbose (more increases verbosity, default warning and error)"
    echo "  -q                 Quiet (disable warning and error messages)"
    echo "  -p                 Run in parrallel (set to ${main[parrallel]})"
+   echo "  -P                 Timestamp log messages with the current local date and time in the format: YYYYMMDDHHMMSS.us"
    echo "  -o <manifest>      Overrule default manifest with specific manifest"
    echo "  -t                 All non option arguments are tags. Runs against all hosts having all tags"
    echo "  -T                 All non option arguments are tags. Runs against all hosts having any tags"
@@ -52,7 +53,7 @@ main() {
 
    options=( "--remote-copy" "scp -q" "--remote-exec" "ssh -x -oPermitLocalCommand=no -oClearAllForwardings=yes -oRemoteCommand=none -oRequestTTY=no -q -oForwardAgent=no" )
 
-   while getopts :hvqptTo:dalLxc: opt; do
+   while getopts :hvqpPtTo:dalLxc: opt; do
       case $opt in
       h) usage
       ;;
@@ -61,6 +62,8 @@ main() {
       q) options+=( "-q" )
       ;;
       p) options+=( "-p" "${main[parrallel]}" )
+      ;;
+      P) options+=( "-P" )
       ;;
       d) options+=( "-n" )
       ;;
