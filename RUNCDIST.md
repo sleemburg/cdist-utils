@@ -25,6 +25,9 @@ Make output quiet.
 `-p`
 Run the configuration of hosts in parallel.
 
+`-P`
+Timestamp log messages with the current local date and time in the format: YYYYMMDDHHMMSS.us.
+
 `-o <manifest>`
 Overrule running any generic manifest and only run the specified manifest.
 
