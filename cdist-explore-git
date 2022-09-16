@@ -8,11 +8,11 @@ type git > /dev/null 2>&1 || { echo "Git not found."; exit 1; }
 
 cd "$CDIST_EXPLORE"
 
-git status > /dev/null 2>&1
-test "$?" -ne "0" && { echo "git status: non zero exit code."; exit 1; }
+output=$(git status 2>&1)
+test "$?" -ne "0" && { echo "git status: non zero exit code ($output)."; exit 1; }
 
-git add . > /dev/null 2>&1
-test "$?" -ne "0" && { echo "git add: non zero exit code."; exit 1; }
+output=$(git add . 2>&1)
+test "$?" -ne "0" && { echo "git add: non zero exit code ($output)."; exit 1; }
 
 git diff-index --quiet HEAD -- > /dev/null 2>&1
 test "$?" -eq "0" && exit 0
@@ -23,9 +23,9 @@ if test "$GIT_AUTHOR_NAME" != ""; then
 else
    author=cdist
 fi
-git commit -am "$date $author: $1" > /dev/null 2>&1
-test "$?" -ne "0" && { echo "git commit: non zero exit code."; exit 1; }
+output=$(git commit -am "$date $author: $1" 2>&1)
+test "$?" -ne "0" && { echo "git commit: non zero exit code ($output)."; exit 1; }
 
-git push > /dev/null 2>&1
-test "$?" -ne "0" && { echo "Explore directory: git push non zero exit code."; exit 1; }
+output=$( git push 2>&1)
+test "$?" -ne "0" && { echo "Explore directory: git push non zero exit code ($output)."; exit 1; }
 exit 0

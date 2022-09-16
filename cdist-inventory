@@ -34,15 +34,17 @@ inventory() {
               -e "$MANUALCFG/$explorer" && continue
       for action in ${explorers[$explorer]}; do
          tag=""
-         for ops in ${actions[$action]//+/ }; do
-            op=${ops/:*}
-            arg=${ops/*:}
+         IFS=+
+         for ops in ${actions[$action]}; do
+            unset IFS
+            op="${ops/:*}"
+            arg="${ops/*:}"
             case $op in
             "if")
                content=${arg/=*/}
                neg=0
                test "${content:0:1}" = "!" && neg=1
-               value=${arg/*=/}
+               value="${arg/*=/}"
                if test -e "$CDIST_EXPLORE/$host/$explorer"; then
                   match="$(grep $content $CDIST_EXPLORE/$host/$explorer 2> /dev/null)"
                   test "$neg" -eq 0 -a "$match" != "" && {

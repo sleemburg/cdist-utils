@@ -2,21 +2,21 @@
 #
 # Wrapper to make it easier to run cdist
 
-# defaults
-DEFCDISTRC=~/.cdistrc
-
 # required for inventory option
 export CDIST_BETA=1
 
 usage() {
    echo "runcdist [options] <hosts|tags>"
    echo
+   echo "See documentation for settings to an optional $CFG config file."
+   echo
    echo "  <hosts>            Name of host or hosts to run cdist on"
    echo "  <tags>             Name of tag or tags to select hosts to run cdist on"
-   echo "  -c <.cdistrc>      Source the <.cdistrc> file, default is ~/.cdistrc"
+   echo "  -c <.cdistrc>      Source the <.cdistrc> file, set to ${main[cdistrc]}"
    echo "  -v                 Run verbose (more increases verbosity, default warning and error)"
    echo "  -q                 Quiet (disable warning and error messages)"
-   echo "  -p                 Run in parrallel"
+   echo "  -p                 Run in parrallel (set to ${main[parrallel]})"
+   echo "  -P                 Timestamp log messages with the current local date and time in the format: YYYYMMDDHHMMSS.us"
    echo "  -o <manifest>      Overrule default manifest with specific manifest"
    echo "  -t                 All non option arguments are tags. Runs against all hosts having all tags"
    echo "  -T                 All non option arguments are tags. Runs against all hosts having any tags"
@@ -28,23 +28,42 @@ usage() {
    exit 1
 }
 
+readconfig() {
+   declare -g -A "main[parrallel]=$(nproc)"
+   main[cdistrc]=~/.cdistrc
+
+   test ! -e $CFG && return
+   while IFS='= ' read var val; do
+      if [[ $var == \[*] ]]; then
+          section=${var:1:-1}
+      elif [[ $val ]]; then
+          declare -g -A "$section[$var]=$val"
+      fi
+   done < <(grep -v "^#" $CFG)
+   test "${#postrun[*]}" -gt 0 && mapfile -d '' postrunindex < <(printf '%s\0' "${!postrun[@]}" | sort -z)
+}
+
 main() {
-   args=( "$0" "$@" )
+   CFG=~/.runcdist.ini
+   CDISTARGS=( "$0" "$@" )
    export CDISTDEBUG=0
-   CDISTRC=""
+   verbose=0
+
+   readconfig
 
    options=( "--remote-copy" "scp -q" "--remote-exec" "ssh -x -oPermitLocalCommand=no -oClearAllForwardings=yes -oRemoteCommand=none -oRequestTTY=no -q -oForwardAgent=no" )
 
-   while getopts :hvqptTo:dalLxc: opt; do
+   while getopts :hvqpPtTo:dalLxc: opt; do
       case $opt in
       h) usage
       ;;
-      v) options+=( "-v" )
+      v) options+=( "-v" ); verbose=$(( verbose + 1 ))
       ;;
       q) options+=( "-q" )
       ;;
-      #p) options+=( "-p" "$(nproc)" )
-      p) options+=( "-p" "5" )
+      p) options+=( "-p" "${main[parrallel]}" )
+      ;;
+      P) options+=( "-P" )
       ;;
       d) options+=( "-n" )
       ;;
@@ -52,11 +71,11 @@ main() {
       ;;
       T) tag="-t"
       ;;
-      o) CONFIGTYPE=$OPTARG
+      o) CONFIGTYPE="$OPTARG"
       ;;
       a) all="-A"
       ;;
-      c) CDISTRC=$OPTARG
+      c) main[cdistrc]="$OPTARG"
       ;;
       l) list="all"
       ;;
@@ -76,9 +95,8 @@ main() {
    shift $((OPTIND-1))
    items=( "$@" )
 
-   test ! -z "$CDISTRC" -a ! -f "$CDISTRC" && { echo "No such file: $CDISTRC"; usage; }
-   test -z "$CDISTRC" && CDISTRC="$DEFCDISTRC"
-   test -f "$CDISTRC" && source "$CDISTRC"
+   test ! -z "${main[cdistrc]}" -a ! -f "${main[cdistrc]}" && { echo "No such file: ${main[cdistrc]}"; usage; }
+   test -f "${main[cdistrc]}" && . "${main[cdistrc]}"
 
    if test "$list" != ""; then
       if test "${#items[*]}" -eq 0; then
@@ -99,18 +117,22 @@ main() {
    if test "$tag" != ""; then
       test "$(cdist inventory list -H $tag "${items[@]}")" = "" && {
          echo "No hosts match specified tags."; exit 1; }
-      alltags=( $(cdist inventory list | sed -n "s/.* //; s/,/\n/g;p" | sort -u ) )
+      mapfile -t alltags < <( cdist inventory list | sed -n "s/.* //; s/,/\n/g;p" | sort -u )
       ok=1
       for item in "${items[@]}"; do
-         [[ ! " ${alltags[*]} " =~ " ${item} " ]] && { echo "Tag $item not found."; ok=0; }
+         [[ ! " ${alltags[*]} " == *" ${item} "* ]] && { echo "Tag $item not found."; ok=0; }
       done
       test "$ok" -ne 1 && exit 1
    fi
-   CDISTACTION=$CONFIGTYPE cdist config -c "$CDIST_CONFIG_DIR" "${options[@]}" $all $tag ${items[*]}
-   cdistret=$?
-   type cdist-explore-git > /dev/null 2>&1 && cdist-explore-git "${args[*]} (ret ${cdistret})"
-   type cdist-inventory > /dev/null 2>&1 && cdist-inventory
-   return $cdistret
+   CDISTACTION="$CONFIGTYPE" cdist config -c "$CDIST_CONFIG_DIR" "${options[@]}" $all $tag "${items[@]}"
+   CDISTRET="$?"
+   for step in "${postrunindex[@]}"; do
+      test "$verbose" -gt 0 && echo "Running \"${postrun[$step]}\""
+      out=$( eval "${postrun[$step]}" 2>&1 )
+      ret="$?"
+      test "$ret" -ne 0 && echo "\"${postrun[$step]}\" returned $ret with output: $out"
+   done
+   return $CDISTRET
 }
 
 main "$@"
